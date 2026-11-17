@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Better Auth ----------
+
+model User {
+  id              String    @id
+  name            String
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  image           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  username        String?   @unique
+  displayUsername String?
+  role            String    @default("user")
+  active          Boolean   @default(true)
+  lastLoginAt     DateTime?
+  sessions        Session[]
+  accounts        Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------- Project Control Tool ----------
+
+model Project {
+  id             String          @id @default(cuid())
+  name           String
+  client         String
+  type           String
+  contract       Float
+  stage          Int             @default(0)
+  specDim        String          @default("")
+  specVolt       String          @default("")
+  specKw         String          @default("")
+  specStd        String          @default("")
+  specNotes      String          @default("")
+  signedBy       String          @default("")
+  signedAt       DateTime?
+  extra          Json            @default("{}")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tasks          Task[]
+  purchaseOrders PurchaseOrder[]
+  checkItems     CheckItem[]
+  stageReviews   StageReview[]
+  docs           HandoverDoc[]
+  costLines      CostLine[]
+  params         Param[]
+  visits         SiteVisit[]
+  attachments    Attachment[]
+  notes          Note[]
+
+  @@index([stage])
+  @@map("projects")
+}
+
+model Note {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String
+  text      String  @default("")
+
+  @@unique([projectId, key])
+  @@map("notes")
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  role        String   @default("Unassigned")
+  owner       String   @default("")
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  status      Int      @default(0)
+  sortOrder   Int      @default(0)
+  dependsOnId String?
+  dependsOn   Task?    @relation("TaskDeps", fields: [dependsOnId], references: [id], onDelete: SetNull)
+  dependents  Task[]   @relation("TaskDeps")
+
+  @@index([projectId])
+  @@map("tasks")
+}
+
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  item       String
+  supplier   String
+  needBy     DateTime @db.Date
+  promisedBy DateTime @db.Date
+  cost       Float
+  status     Int      @default(0)
+  waybill    String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([projectId])
+  @@map("purchase_orders")
+}
+
+model CheckItem {
+  id          String            @id @default(cuid())
+  projectId   String
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind        String
+  item        String
+  reading     String            @default("")
+  result      String            @default("")
+  note        String            @default("")
+  status      Int               @default(0)
+  sortOrder   Int               @default(0)
+  reviews     CheckItemReview[]
+  attachments Attachment[]
+
+  @@index([projectId, kind])
+  @@map("check_items")
+}
+
+model CheckItemReview {
+  id          String    @id @default(cuid())
+  checkItemId String
+  checkItem   CheckItem @relation(fields: [checkItemId], references: [id], onDelete: Cascade)
+  version     Int
+  date        DateTime  @db.Date
+  author      String
+  status      String
+  text        String
+
+  @@unique([checkItemId, version])
+  @@map("check_item_reviews")
+}
+
+model StageReview {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String
+  version   Int
+  date      DateTime @db.Date
+  author    String
+  status    String
+  text      String
+
+  @@unique([projectId, key, version])
+  @@map("stage_reviews")
+}
+
+model HandoverDoc {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slot      String
+  ref       String  @default("")
+  ready     Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  @@unique([projectId, slot])
+  @@map("handover_docs")
+}
+
+model CostLine {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  code      String
+  budget    Float   @default(0)
+  actual    Float   @default(0)
+
+  @@index([projectId])
+  @@map("cost_lines")
+}
+
+model Param {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  groupName String
+  name      String
+  value     String  @default("")
+  unit      String  @default("")
+
+  @@index([projectId])
+  @@map("params")
+}
+
+model SiteVisit {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  type      String
+  who       String   @default("")
+  purpose   String   @default("")
+  notes     String   @default("")
+  status    String   @default("Planned")
+
+  @@index([projectId])
+  @@map("site_visits")
+}
+
+model Attachment {
+  id          String     @id @default(cuid())
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scope       String
+  checkItemId String?
+  checkItem   CheckItem? @relation(fields: [checkItemId], references: [id], onDelete: Cascade)
+  name        String
+  mimeType    String
+  size        Int
+  isImage     Boolean    @default(false)
+  data        Bytes
+  uploadedBy  String     @default("")
+  createdAt   DateTime   @default(now())
+
+  @@index([projectId, scope])
+  @@map("attachments")
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model ActivityLog {
+  id       Int      @id @default(autoincrement())
+  ts       DateTime @default(now())
+  userName String
+  action   String
+
+  @@index([ts])
+  @@map("activity_log")
+}
