@@ -13,48 +13,73 @@ export function VisitRow({
   canDelete: boolean;
 }) {
   return (
-    <tr>
-      <td>
-        <AutoForm action={saveVisitAction}>
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="visitId" value={visit.id} />
-          <input aria-label="Visit date" type="date" name="date" defaultValue={visit.date} />
+    <div className="visit-row">
+      <AutoForm action={saveVisitAction} className="visit-form">
+        <input type="hidden" name="projectId" value={projectId} />
+        <input type="hidden" name="visitId" value={visit.id} />
+        <label>
+          <span className="kl">Date</span>
+          <input
+            aria-label="Visit date"
+            type="date"
+            name="date"
+            defaultValue={visit.date}
+          />
+        </label>
+        <label>
+          <span className="kl">Type</span>
           <select aria-label="Visit type" name="type" defaultValue={visit.type}>
             {VISIT_TYPES.map((type) => (
               <option key={type}>{type}</option>
             ))}
           </select>
-          <input aria-label="Visit owner" name="who" defaultValue={visit.who} placeholder="Who" />
+        </label>
+        <label>
+          <span className="kl">Attendees</span>
           <input
-            aria-label="Visit purpose"
+            aria-label="Attendees"
+            name="who"
+            defaultValue={visit.who}
+            placeholder="Names and roles"
+          />
+        </label>
+        <label>
+          <span className="kl">Purpose</span>
+          <input
+            aria-label="Purpose"
             name="purpose"
             defaultValue={visit.purpose}
-            placeholder="Purpose"
+            placeholder="What must be checked"
           />
+        </label>
+        <label>
+          <span className="kl">Status</span>
           <select aria-label="Visit status" name="status" defaultValue={visit.status}>
             {VISIT_STATUSES.map((status) => (
               <option key={status}>{status}</option>
             ))}
           </select>
+        </label>
+        <label className="visit-notes">
+          <span className="kl">Findings</span>
           <input
-            aria-label="Visit notes"
+            aria-label="Findings"
             name="notes"
             defaultValue={visit.notes}
             placeholder="Key findings"
           />
-        </AutoForm>
-      </td>
-      <td>
-        {canDelete ? (
-          <ConfirmButton
-            action={deleteVisitAction}
-            fields={{ projectId, visitId: visit.id }}
-            label="Del"
-            confirm="Delete this visit?"
-          />
-        ) : null}
-      </td>
-    </tr>
+        </label>
+      </AutoForm>
+      {canDelete ? (
+        <ConfirmButton
+          action={deleteVisitAction}
+          fields={{ projectId, visitId: visit.id }}
+          label="Del"
+          confirm="Delete this visit?"
+          className="btn btd visit-delete"
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -83,16 +108,17 @@ export function PlanVisitForm({ projectId }: { projectId: string }) {
           </select>
         </label>
         <label>
-          <span className="kl">Who</span>
-          <input name="who" placeholder="Engineer / client" />
+          <span className="kl">Attendees</span>
+          <input name="who" placeholder="Names and roles" />
         </label>
         <label>
           <span className="kl">Purpose</span>
-          <input name="purpose" placeholder="Purpose" />
+          <input name="purpose" placeholder="What must be checked" />
         </label>
       </SubmitForm>
       <p className="sub">
-        Findings go in the general comments below. Attach documents and photos as they arrive.
+        Visits save automatically. Record findings and mark each visit as done when the
+        survey is complete.
       </p>
     </div>
   );

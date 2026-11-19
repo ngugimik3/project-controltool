@@ -125,7 +125,6 @@ export function CheckRow({
           projectId={projectId}
           scope={item.kind}
           itemId={item.id}
-          canDelete={canDelete}
           locked={locked}
         />
       </td>

@@ -4,6 +4,7 @@ import { PARAM_GROUPS, PARAM_SUGGESTIONS } from "@/lib/defaults";
 import { can, type Role } from "@/lib/roles";
 import type { ProjectView, SettingsView } from "@/lib/types";
 import { AutoForm, SubmitForm } from "@/components/forms";
+import { PageHeader } from "@/components/page-header";
 import { ParamRow } from "@/components/param-row";
 import { ProjectTable } from "@/components/project-table";
 
@@ -19,7 +20,12 @@ export function ProjectsView({
   role: Role;
 }) {
   return (
-    <>
+    <div className="view-stack">
+      <PageHeader
+        title="Projects"
+        subtitle={`${projects.length} in the portfolio · create, specify, and manage delivery`}
+      />
+
       <div className="card">
         <div className="ct">New project</div>
         <SubmitForm action={createProjectAction} submitLabel="Create project" resetOnSuccess>
@@ -186,6 +192,6 @@ export function ProjectsView({
         <div className="ct">All projects</div>
         <ProjectTable projects={projects} role={role} />
       </div>
-    </>
+    </div>
   );
 }

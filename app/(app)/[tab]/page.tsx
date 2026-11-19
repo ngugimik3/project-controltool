@@ -3,12 +3,15 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { TABS, TL } from "@/lib/constants";
 import { getActivity, getProjects, getSelectedProject, getSettings, getUsers } from "@/lib/data";
+import { parseRange, type RangeKey } from "@/lib/dashboard";
 import { ProjectsView } from "@/components/views/projects-view";
-import { DashboardView } from "@/components/views/dashboard-view";
+import { DashboardSection } from "@/components/views/dashboard-view";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { SurveyView } from "@/components/views/survey-view";
 import { ScheduleView } from "@/components/views/schedule-view";
 import { ProcurementView } from "@/components/views/procurement-view";
 import { FatView } from "@/components/views/fat-view";
+import { NotesView } from "@/components/views/notes-view";
 import { HandoverView } from "@/components/views/handover-view";
 import { CostingView } from "@/components/views/costing-view";
 import { AdminView } from "@/components/views/admin-view";
@@ -22,22 +25,35 @@ import {
 
 function EmptyProject() {
   return (
-    <div className="card">
-      <div className="ct">No project selected</div>
-      <p className="sub">Create a project on the Projects tab to get started.</p>
+    <div className="view-stack">
+      <div className="card">
+        <div className="ct">No project selected</div>
+        <p className="sub">Choose a project in the sidebar, or create one on the Projects tab.</p>
+      </div>
     </div>
   );
 }
 
-async function TabContent({ tab }: { tab: string }) {
+async function TabContent({
+  tab,
+  range,
+  query,
+}: {
+  tab: string;
+  range: RangeKey;
+  query: Record<string, string | string[] | undefined>;
+}) {
   const user = await requireUser();
 
   if (!(TABS as readonly string[]).includes(tab)) notFound();
   if (tab === "admin" && user.role === "user") redirect("/dashboard");
 
   if (tab === "dashboard") {
-    const [project, projects] = await Promise.all([getSelectedProject(), getProjects()]);
-    return <DashboardView projects={projects} project={project} role={user.role} />;
+    return (
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardSection range={range} role={user.role} />
+      </Suspense>
+    );
   }
 
   if (tab === "survey") {
@@ -56,6 +72,22 @@ async function TabContent({ tab }: { tab: string }) {
     const project = await getSelectedProject();
     if (!project) return <EmptyProject />;
     return <ProcurementView project={project} role={user.role} />;
+  }
+
+  if (tab === "notes") {
+    const selected = await getSelectedProject();
+    const sp = {
+      q: typeof query.q === "string" ? query.q : undefined,
+      project: typeof query.project === "string" ? query.project : undefined,
+      category: typeof query.category === "string" ? query.category : undefined,
+      scope: typeof query.scope === "string" ? query.scope : undefined,
+    };
+    return (
+      <NotesView
+        searchParams={Promise.resolve(sp)}
+        selectedProjectId={selected?.id ?? null}
+      />
+    );
   }
 
   if (tab === "fat") {
@@ -141,17 +173,25 @@ async function TabContent({ tab }: { tab: string }) {
 
 export default function TabPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tab: string }>;
+  searchParams: Promise<{ range?: string | string[] }>;
 }) {
   return (
     <Suspense fallback={<div className="empty">Loading…</div>}>
-      <TabResolver params={params} />
+      <TabResolver params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function TabResolver({ params }: { params: Promise<{ tab: string }> }) {
-  const { tab } = await params;
-  return <TabContent tab={tab} />;
+async function TabResolver({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ tab: string }>;
+  searchParams: Promise<{ range?: string | string[] }>;
+}) {
+  const [{ tab }, query] = await Promise.all([params, searchParams]);
+  return <TabContent tab={tab} range={parseRange(query.range)} query={query} />;
 }

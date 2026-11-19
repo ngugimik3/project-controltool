@@ -147,3 +147,34 @@ export interface ActionResult {
   blockers?: string[];
   busy?: boolean;
 }
+
+export interface ProfileView {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  role: import("./roles").Role;
+  phone: string;
+  jobTitle: string;
+  department: string;
+  bio: string;
+  avatarUrl: string | null;
+}
+
+export type ProfileField = "name" | "phone" | "jobTitle" | "department" | "bio";
+
+export interface ProfileState {
+  ok?: boolean;
+  message?: string;
+  error?: string;
+  fieldErrors?: Partial<Record<ProfileField | "avatar", string>>;
+}
+
+export type PasswordField = "currentPassword" | "newPassword" | "confirmPassword";
+
+export interface PasswordState {
+  ok?: boolean;
+  message?: string;
+  error?: string;
+  fieldErrors?: Partial<Record<PasswordField, string>>;
+}

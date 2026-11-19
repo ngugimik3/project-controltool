@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { can } from "@/lib/roles";
 import { logActivity } from "@/lib/activity";
 import { prisma } from "@/lib/prisma";
 import {
@@ -91,9 +90,6 @@ export async function uploadAttachmentsAction(formData: FormData): Promise<Actio
 
 export async function deleteAttachmentAction(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
-  if (!can(user.role, "admin", "superadmin")) {
-    return { error: "Only admins can remove attachments." };
-  }
   const parsed = parseForm(
     z.object({ projectId: zShortText.min(1), attachmentId: zShortText.min(1) }),
     formData,
@@ -103,7 +99,7 @@ export async function deleteAttachmentAction(formData: FormData): Promise<Action
   const [project, attachment] = await Promise.all([
     prisma.project.findUnique({
       where: { id: parsed.data.projectId },
-      select: { id: true, signedBy: true },
+      select: { id: true, name: true, signedBy: true },
     }),
     prisma.attachment.findFirst({
       where: { id: parsed.data.attachmentId, projectId: parsed.data.projectId },
@@ -117,6 +113,7 @@ export async function deleteAttachmentAction(formData: FormData): Promise<Action
   }
 
   await prisma.attachment.delete({ where: { id: attachment.id } });
+  await logActivity(user.name, `${project.name}: removed ${attachment.name}`);
   revalidatePath("/", "layout");
-  return {};
+  return { message: "Attachment removed." };
 }

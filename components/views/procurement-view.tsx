@@ -1,4 +1,5 @@
 import { AutoForm, ConfirmButton, SubmitForm } from "@/components/forms";
+import { PageHeader } from "@/components/page-header";
 import {
   addPurchaseOrderAction,
   deletePurchaseOrderAction,
@@ -11,9 +12,15 @@ import type { Role } from "@/lib/roles";
 
 export function ProcurementView({ project, role }: { project: ProjectView; role: Role }) {
   const canDelete = role === "admin" || role === "superadmin";
+  const slipping = project.purchaseOrders.filter(isPoSlipping).length;
 
   return (
-    <>
+    <div className="view-stack">
+      <PageHeader
+        title="Procurement"
+        subtitle={`${project.name} · ${project.purchaseOrders.length} PO${project.purchaseOrders.length === 1 ? "" : "s"}${slipping ? ` · ${slipping} slipping` : ""}`}
+      />
+
       <div className="card">
         <div className="ct">New purchase order</div>
         <SubmitForm
@@ -41,8 +48,9 @@ export function ProcurementView({ project, role }: { project: ProjectView; role:
         </SubmitForm>
       </div>
 
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
       <div className="sc">
-        <table className="tbl">
+        <table className="tbl" style={{ border: 0, borderRadius: 0 }}>
           <thead>
             <tr>
               <th>Item</th>
@@ -59,7 +67,14 @@ export function ProcurementView({ project, role }: { project: ProjectView; role:
             {project.purchaseOrders.length ? (
               project.purchaseOrders.map((po) => (
                 <tr key={po.id}>
-                  <td>{po.item}</td>
+                  <td>
+                    {po.item}
+                    {isPoSlipping(po) ? (
+                      <span className="badge ba" style={{ marginLeft: 6 }}>
+                        Slip
+                      </span>
+                    ) : null}
+                  </td>
                   <td>{po.supplier}</td>
                   <td>{po.needBy}</td>
                   <td className={isPoSlipping(po) ? "warn" : undefined}>{po.promisedBy}</td>
@@ -113,6 +128,7 @@ export function ProcurementView({ project, role }: { project: ProjectView; role:
           </tbody>
         </table>
       </div>
-    </>
+      </div>
+    </div>
   );
 }

@@ -10,7 +10,14 @@ import { parseForm, zDate, zShortText } from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
 import { fmtDate } from "@/lib/planner";
 
-const visitType = z.enum(["Previsit", "Site survey", "Installation", "Commissioning", "Other"]);
+const visitType = z.enum([
+  "Previsit",
+  "Site survey",
+  "Revisit",
+  "Installation",
+  "Commissioning",
+  "Other",
+]);
 const visitStatus = z.enum(["Planned", "Done", "Cancelled"]);
 
 function visitFields() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/lib/types";
 import { toast } from "./toast";
 
@@ -141,6 +142,7 @@ export function ActionButton({
   className = "btn btp",
   confirm,
   title,
+  onSuccess,
 }: {
   action: FormAction;
   fields?: ButtonFields;
@@ -149,6 +151,7 @@ export function ActionButton({
   className?: string;
   confirm?: string;
   title?: string;
+  onSuccess?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -159,7 +162,8 @@ export function ActionButton({
       formData.set(key, String(value));
     }
     startTransition(async () => {
-      await runAction(action, formData);
+      const result = await runAction(action, formData);
+      if (!result.error) onSuccess?.();
     });
   }
 
@@ -191,6 +195,8 @@ export function ConfirmButton({
   className?: string;
   pendingLabel?: string;
 }) {
+  const router = useRouter();
+
   return (
     <ActionButton
       action={action}
@@ -199,6 +205,7 @@ export function ConfirmButton({
       pendingLabel={pendingLabel}
       className={className}
       confirm={confirm}
+      onSuccess={() => router.refresh()}
     />
   );
 }

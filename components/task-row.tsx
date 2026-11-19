@@ -22,13 +22,11 @@ export function TaskRow({
   task,
   dependencies,
   canDelete,
-  bar,
 }: {
   projectId: string;
   task: TaskView;
   dependencies: Dependency[];
   canDelete: boolean;
-  bar: { left: number; width: number };
 }) {
   const [saved, setSaved] = useState({
     name: task.name,
@@ -134,14 +132,6 @@ export function TaskRow({
           label={taskStatusLabel(task.status)}
           className="btn bts"
         />
-      </td>
-      <td className={`gt s${task.status}`} title={`${values.start} to ${values.end}`}>
-        {bar.width > 0 ? (
-          <i
-            className={`s${task.status}`}
-            style={{ left: `${bar.left}%`, width: `${Math.max(1, bar.width)}%` }}
-          />
-        ) : null}
       </td>
       <td>
         {canDelete ? (

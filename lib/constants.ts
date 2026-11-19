@@ -4,6 +4,7 @@ export const TABS = [
   "survey",
   "schedule",
   "procurement",
+  "notes",
   "fat",
   "install",
   "commis",
@@ -23,6 +24,7 @@ export const TL: Record<TabKey, string> = {
   survey: "Site Survey",
   schedule: "Schedule",
   procurement: "Procurement",
+  notes: "Notes",
   fat: "FAT",
   install: "Installation",
   commis: "Commissioning",
@@ -32,6 +34,30 @@ export const TL: Record<TabKey, string> = {
   handover: "Handover",
   costing: "Costing",
   admin: "Admin",
+};
+
+export const NAV_GROUPS: { label: string; tabs: TabKey[] }[] = [
+  { label: "Overview", tabs: ["dashboard", "projects", "notes"] },
+  {
+    label: "Delivery",
+    tabs: ["survey", "schedule", "procurement", "fat", "install", "commis", "sat"],
+  },
+  { label: "Closeout", tabs: ["training", "support", "handover", "costing"] },
+  { label: "Ops", tabs: ["admin"] },
+];
+
+/** Map pipeline stage name → primary app tab */
+export const STAGE_TAB: Record<string, TabKey> = {
+  Inception: "projects",
+  "Site Survey": "survey",
+  Procurement: "procurement",
+  "Workshop & FAT": "fat",
+  Installation: "install",
+  Commissioning: "commis",
+  SAT: "sat",
+  Training: "training",
+  Handover: "handover",
+  Closed: "dashboard",
 };
 
 export const STAGES = [

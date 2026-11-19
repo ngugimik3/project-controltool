@@ -19,6 +19,7 @@ export interface SessionUser {
   name: string;
   username: string;
   role: Role;
+  avatarUrl: string | null;
 }
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
@@ -27,7 +28,14 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, username: true, role: true, active: true },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      role: true,
+      active: true,
+      avatarUrl: true,
+    },
   });
   if (!user || !user.active) return null;
 
@@ -36,6 +44,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     name: user.name,
     username: user.username ?? "",
     role: normalizeRole(user.role),
+    avatarUrl: user.avatarUrl ?? null,
   };
 });
 

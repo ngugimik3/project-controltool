@@ -22,7 +22,7 @@ async function LoginGate() {
         </div>
         <div className="lc">
           <h2>Project Control</h2>
-          <p className="sub">Sign in to continue</p>
+          <p className="sub">Sign in to manage delivery from survey to handover.</p>
           <LoginForm />
         </div>
         <p className="login-foot">Know how through experience</p>

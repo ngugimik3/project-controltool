@@ -9,7 +9,9 @@ function csv(rows: (string | number)[][]) {
       row
         .map((cell) => {
           const value = String(cell ?? "");
-          return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+          return /[",\r\n]/.test(value)
+            ? `"${value.replace(/"/g, '""')}"`
+            : value;
         })
         .join(","),
     )
@@ -53,7 +55,9 @@ export async function GET(
       ["Task", "Role", "Owner", "Start", "End", "Status", "Depends on"],
     ];
     for (const task of sortedTasks(project.tasks)) {
-      const dependency = project.tasks.find((item) => item.id === task.dependsOnId);
+      const dependency = project.tasks.find(
+        (item) => item.id === task.dependsOnId,
+      );
       rows.push([
         task.name,
         task.role,

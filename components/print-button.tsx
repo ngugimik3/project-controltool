@@ -2,8 +2,8 @@
 
 export function PrintButton() {
   return (
-    <button type="button" className="btn btp" onClick={() => window.print()}>
-      Print / save PDF
+    <button type="button" className="btn btp" onClick={() => globalThis.print()}>
+      Print / PDF
     </button>
   );
 }

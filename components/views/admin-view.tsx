@@ -1,4 +1,5 @@
 import { ConfirmButton, SubmitForm } from "@/components/forms";
+import { PageHeader } from "@/components/page-header";
 import { addProjectTypeAction } from "@/lib/actions/project";
 import { addTaskRoleAction } from "@/lib/actions/task";
 import {
@@ -28,7 +29,12 @@ export function AdminView({
   const superadmin = role === "superadmin";
 
   return (
-    <>
+    <div className="view-stack">
+      <PageHeader
+        title="Admin"
+        subtitle="Backup, users, categories, roles, and activity"
+      />
+
       <div className="card">
         <div className="ct">Backup</div>
         <div className="grow">
@@ -219,6 +225,6 @@ export function AdminView({
           </table>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -163,25 +163,21 @@ export function AttachmentThumb({
 function AttachmentTile({
   attachment,
   projectId,
-  canDelete,
 }: {
   attachment: AttachmentMeta;
   projectId: string;
-  canDelete: boolean;
 }) {
   return (
     <div className="at" style={{ width: 56 }}>
       <AttachmentThumb attachment={attachment} small />
       <small title={attachment.name}>{attachment.name}</small>
-      {canDelete ? (
-        <ConfirmButton
-          action={deleteAttachmentAction}
-          fields={{ projectId, attachmentId: attachment.id }}
-          label="Remove"
-          confirm="Remove this file?"
-          className="btn btd"
-        />
-      ) : null}
+      <ConfirmButton
+        action={deleteAttachmentAction}
+        fields={{ projectId, attachmentId: attachment.id }}
+        label="Remove"
+        confirm="Remove this file?"
+        className="btn btd"
+      />
     </div>
   );
 }
@@ -191,14 +187,12 @@ export function AttachmentStrip({
   projectId,
   scope,
   itemId,
-  canDelete,
   locked,
 }: {
   attachments: AttachmentMeta[];
   projectId: string;
   scope: string;
   itemId: string;
-  canDelete: boolean;
   locked?: boolean;
 }) {
   return (
@@ -208,7 +202,6 @@ export function AttachmentStrip({
           key={attachment.id}
           attachment={attachment}
           projectId={projectId}
-          canDelete={canDelete}
         />
       ))}
       {locked ? null : (

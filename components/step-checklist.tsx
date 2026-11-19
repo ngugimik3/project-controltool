@@ -79,7 +79,6 @@ export function StepChecklist({
                       projectId={project.id}
                       scope={item.kind}
                       itemId={item.id}
-                      canDelete={canDelete}
                     />
                   </td>
                   <td>
@@ -133,7 +132,7 @@ export function StepChecklist({
         <ReviewForm projectId={project.id} keyName={kind} />
       </div>
 
-      <AttachmentCard project={project} scope={kind} canDelete={canDelete} />
+      <AttachmentCard project={project} scope={kind} />
     </>
   );
 }

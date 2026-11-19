@@ -100,12 +100,7 @@ export function Checklist({
       </div>
     </div>
     {hideAttachments ? null : (
-      <AttachmentCard
-        project={project}
-        scope={kind}
-        canDelete={canDelete}
-        locked={locked}
-      />
+      <AttachmentCard project={project} scope={kind} locked={locked} />
     )}
     </>
   );

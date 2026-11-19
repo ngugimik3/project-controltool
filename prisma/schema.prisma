@@ -10,22 +10,41 @@ datasource db {
 // ---------- Better Auth ----------
 
 model User {
-  id              String    @id
+  id              String        @id
   name            String
-  email           String    @unique
-  emailVerified   Boolean   @default(false)
+  email           String        @unique
+  emailVerified   Boolean       @default(false)
   image           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  username        String?   @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  username        String?       @unique
   displayUsername String?
-  role            String    @default("user")
-  active          Boolean   @default(true)
+  role            String        @default("user")
+  active          Boolean       @default(true)
   lastLoginAt     DateTime?
+  phone           String?
+  jobTitle        String?
+  department      String?
+  bio             String?
+  avatarUrl       String?
+  avatar          UserAvatar?
   sessions        Session[]
   accounts        Account[]
+  notes           Note[]
+  projectNotes    ProjectNote[] @relation("ProjectNoteAuthor")
 
   @@map("user")
+}
+
+model UserAvatar {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType  String
+  size      Int
+  data      Bytes
+  updatedAt DateTime @updatedAt
+
+  @@map("user_avatars")
 }
 
 model Session {
@@ -104,6 +123,7 @@ model Project {
   visits         SiteVisit[]
   attachments    Attachment[]
   notes          Note[]
+  projectNotes   ProjectNote[]   @relation("ProjectNoteProject")
 
   @@index([stage])
   @@map("projects")
@@ -115,6 +135,8 @@ model Note {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   key       String
   text      String  @default("")
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
 
   @@unique([projectId, key])
   @@map("notes")
@@ -291,4 +313,36 @@ model ActivityLog {
 
   @@index([ts])
   @@map("activity_log")
+}
+
+enum ProjectNoteCategory {
+  GENERAL
+  SITE
+  DESIGN
+  MEETING
+  DECISION
+  ISSUE
+  PROCUREMENT
+  SUPPLIER
+  QUOTATION
+  DELIVERY
+  APPROVAL
+}
+
+model ProjectNote {
+  id          String              @id @default(cuid())
+  title       String?
+  body        String
+  category    ProjectNoteCategory @default(GENERAL)
+  pinned      Boolean             @default(false)
+  projectId   String?
+  createdById String
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  project   Project? @relation("ProjectNoteProject", fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy User     @relation("ProjectNoteAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([createdAt])
 }

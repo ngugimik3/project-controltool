@@ -157,7 +157,14 @@ export const PARAM_SUGGESTIONS = [
   "Certification",
 ];
 
-export const VISIT_TYPES = ["Previsit", "Site survey", "Revisit"];
+export const VISIT_TYPES = [
+  "Previsit",
+  "Site survey",
+  "Revisit",
+  "Installation",
+  "Commissioning",
+  "Other",
+];
 export const VISIT_STATUSES = ["Planned", "Done", "Cancelled"];
 
 export const ATTACHMENT_ACCEPT = "image/*,.pdf,.csv,.txt,.md,.json";

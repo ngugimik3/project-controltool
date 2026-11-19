@@ -196,6 +196,19 @@ function utcDate(iso: string): number {
   return new Date(`${iso}T00:00:00.000Z`).getTime();
 }
 
+function alignWeekStart(ms: number): number {
+  const d = new Date(ms);
+  const day = d.getUTCDay(); // 0 Sun … 6 Sat
+  const back = day === 0 ? 6 : day - 1; // Monday-based weeks
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - back);
+}
+
+function alignWeekEnd(ms: number): number {
+  const start = alignWeekStart(ms);
+  return start + 7 * DAY;
+}
+
+/** Pad the gantt window so edge bars are not clipped. */
 export function ganttWindow(project: ProjectView): GanttWindow {
   const gantt = (project.extra.gantt ?? {}) as { from?: string; to?: string; unit?: string };
   const unit: GanttUnit =
@@ -208,6 +221,27 @@ export function ganttWindow(project: ProjectView): GanttWindow {
   let end = gantt.to ? utcDate(gantt.to) + DAY : ends.length ? Math.max(...ends) : today + DAY;
   if (!Number.isFinite(start)) start = today;
   if (!Number.isFinite(end) || end <= start) end = start + DAY;
+
+  // Pad so bars are not clipped at the edges
+  if (!gantt.from || !gantt.to) {
+    if (unit === "month") {
+      const s = new Date(start);
+      start = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), 1);
+      const e = new Date(end - DAY);
+      end = Date.UTC(e.getUTCFullYear(), e.getUTCMonth() + 1, 1);
+    } else if (unit === "week") {
+      start = alignWeekStart(start - 7 * DAY);
+      end = alignWeekEnd(end + 7 * DAY - 1);
+    } else {
+      start -= 2 * DAY;
+      end += 2 * DAY;
+    }
+  } else if (unit === "week") {
+    start = alignWeekStart(start);
+    end = alignWeekEnd(Math.max(end, start + DAY));
+  }
+
+  if (end <= start) end = start + (unit === "month" ? 31 * DAY : 7 * DAY);
   return { start, end, unit };
 }
 
@@ -246,12 +280,21 @@ export function ganttTicks(
 
   const step = unit === "day" ? DAY : 7 * DAY;
   const count = Math.ceil(span / step);
-  const skip = unit === "day" && count > 45 ? Math.ceil(count / 45) : 1;
+  const skip =
+    unit === "day" && count > 45
+      ? Math.ceil(count / 45)
+      : unit === "week" && count > 20
+        ? Math.ceil(count / 20)
+        : 1;
   for (let index = 0; index < count; index += skip) {
     const cursor = start + index * step;
     ticks.push({
       x: (cursor - start) / span,
-      label: new Date(cursor).toISOString().slice(5, 10),
+      label: new Date(cursor).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+      }),
     });
   }
   return ticks;
@@ -262,6 +305,154 @@ export function ganttDates(window: GanttWindow) {
     from: new Date(window.start).toISOString().slice(0, 10),
     to: new Date(window.end - DAY).toISOString().slice(0, 10),
   };
+}
+
+/** Fraction 0–1 of “today” within the gantt window, or null if outside. */
+export function ganttTodayX(window: GanttWindow, today = todayISO()): number | null {
+  const t = utcDate(today) + DAY / 2;
+  if (t < window.start || t > window.end) return null;
+  const span = window.end - window.start;
+  if (span <= 0) return null;
+  return (t - window.start) / span;
+}
+
+export function ganttBar(
+  window: GanttWindow,
+  startDate: string,
+  endDate: string,
+): { left: number; width: number } {
+  const span = window.end - window.start;
+  if (span <= 0) return { left: 0, width: 0 };
+  const leftMs = Math.max(utcDate(startDate), window.start);
+  const rightMs = Math.min(utcDate(endDate) + DAY, window.end);
+  if (rightMs <= leftMs) return { left: 0, width: 0 };
+  return {
+    left: ((leftMs - window.start) / span) * 100,
+    width: ((rightMs - leftMs) / span) * 100,
+  };
+}
+
+/** Inclusive calendar-day span for a task. */
+export function taskDays(startDate: string, endDate: string): number {
+  const start = utcDate(startDate);
+  const end = utcDate(endDate);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
+  return Math.floor((end - start) / DAY) + 1;
+}
+
+/**
+ * Display status derived from stored status + dates.
+ * 0 Not started · 1 In progress · 2 Blocked/Overdue · 3 Done
+ */
+export function derivedTaskStatus(
+  task: Pick<TaskView, "status" | "startDate" | "endDate">,
+  today = todayISO(),
+): number {
+  if (task.status === 3) return 3;
+  if (task.status === 2) return 2;
+  if (today < task.startDate) return 0;
+  if (today > task.endDate) return 2; // overdue → attention
+  return 1;
+}
+
+export const STATUS_SYMBOLS = ["○", "▶", "!", "✓"] as const;
+
+export function statusSymbol(status: number): string {
+  return STATUS_SYMBOLS[status] ?? STATUS_SYMBOLS[0];
+}
+
+/** Progress % from dates (Done = 100, Not started = 0). */
+export function taskPercent(
+  task: Pick<TaskView, "status" | "startDate" | "endDate">,
+  today = todayISO(),
+): number {
+  if (task.status === 3) return 100;
+  const days = taskDays(task.startDate, task.endDate);
+  if (days <= 0) return 0;
+  if (today < task.startDate) return 0;
+  if (today > task.endDate) return task.status === 3 ? 100 : 99;
+  const elapsed = taskDays(task.startDate, today);
+  return Math.max(1, Math.min(99, Math.round((elapsed / days) * 100)));
+}
+
+const STAGE_MATCHERS: { stage: number; patterns: RegExp[] }[] = [
+  { stage: 0, patterns: [/inception/i, /spec/i, /approv/i, /design/i] },
+  { stage: 1, patterns: [/survey/i, /previsit/i, /site visit/i] },
+  { stage: 2, patterns: [/procur/i, /purchase/i, /\bpo\b/i, /order/i] },
+  { stage: 3, patterns: [/workshop/i, /\bfat\b/i, /factory/i, /assembl/i] },
+  { stage: 4, patterns: [/install/i] },
+  { stage: 5, patterns: [/commiss/i] },
+  { stage: 6, patterns: [/\bsat\b/i, /acceptance/i] },
+  { stage: 7, patterns: [/train/i] },
+  { stage: 8, patterns: [/handover/i, /pack/i, /as-?built/i, /document/i] },
+];
+
+export function taskStageIndex(task: Pick<TaskView, "name" | "role">): number {
+  const hay = `${task.name} ${task.role}`;
+  for (const entry of STAGE_MATCHERS) {
+    if (entry.patterns.some((re) => re.test(hay))) return entry.stage;
+  }
+  return 0;
+}
+
+export function groupTasksByStage(tasks: TaskView[]): { stage: number; label: string; tasks: TaskView[] }[] {
+  const buckets = new Map<number, TaskView[]>();
+  for (const task of sortedTasks(tasks)) {
+    const stage = taskStageIndex(task);
+    const list = buckets.get(stage) ?? [];
+    list.push(task);
+    buckets.set(stage, list);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([stage, group]) => ({
+      stage,
+      label: STAGES[stage] ?? `Stage ${stage}`,
+      tasks: group,
+    }));
+}
+
+/** Monday-aligned week columns covering the window. */
+export function ganttWeekColumns(
+  window: GanttWindow,
+): { start: number; end: number; label: string; x: number; width: number }[] {
+  const span = window.end - window.start;
+  if (span <= 0) return [];
+  const columns: { start: number; end: number; label: string; x: number; width: number }[] = [];
+  let cursor = alignWeekStart(window.start);
+  while (cursor < window.end) {
+    const next = cursor + 7 * DAY;
+    const left = Math.max(cursor, window.start);
+    const right = Math.min(next, window.end);
+    if (right > left) {
+      columns.push({
+        start: cursor,
+        end: next,
+        label: new Date(cursor).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          timeZone: "UTC",
+        }),
+        x: ((left - window.start) / span) * 100,
+        width: ((right - left) / span) * 100,
+      });
+    }
+    cursor = next;
+  }
+  return columns;
+}
+
+/** Fraction of a week column covered by a task (0–1). */
+export function weekCoverage(
+  weekStart: number,
+  weekEnd: number,
+  startDate: string,
+  endDate: string,
+): number {
+  const left = Math.max(weekStart, utcDate(startDate));
+  const right = Math.min(weekEnd, utcDate(endDate) + DAY);
+  if (right <= left) return 0;
+  return (right - left) / (weekEnd - weekStart);
 }
 
 export function sortedTasks(tasks: ProjectView["tasks"]) {

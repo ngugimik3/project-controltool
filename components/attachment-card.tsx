@@ -6,12 +6,10 @@ import type { ProjectView } from "@/lib/types";
 export function AttachmentCard({
   project,
   scope,
-  canDelete,
   locked,
 }: {
   project: ProjectView;
   scope: string;
-  canDelete: boolean;
   locked?: boolean;
 }) {
   const attachments = project.attachments.filter(
@@ -40,15 +38,13 @@ export function AttachmentCard({
               <div className="at" key={attachment.id}>
                 <AttachmentThumb attachment={attachment} />
                 <small title={attachment.name}>{attachment.name}</small>
-                {canDelete ? (
-                  <ConfirmButton
-                    action={deleteAttachmentAction}
-                    fields={{ projectId: project.id, attachmentId: attachment.id }}
-                    label="Remove"
-                    confirm="Remove this file?"
-                    className="btn btd"
-                  />
-                ) : null}
+                <ConfirmButton
+                  action={deleteAttachmentAction}
+                  fields={{ projectId: project.id, attachmentId: attachment.id }}
+                  label="Remove"
+                  confirm="Remove this file?"
+                  className="btn btd"
+                />
               </div>
             );
           })
