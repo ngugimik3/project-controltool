@@ -8,9 +8,11 @@ import { ENGINEER_CATEGORIES, CATEGORY_LABELS } from "@/lib/note-categories";
 export function NoteComposer({
   projects,
   defaultProjectId,
+  lockProject,
 }: {
   projects: { id: string; name: string }[];
   defaultProjectId?: string;
+  lockProject?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
@@ -63,17 +65,21 @@ export function NoteComposer({
               ))}
             </select>
           </label>
-          <label className="note-composer-field">
-            <span>Project</span>
-            <select name="projectId" defaultValue={defaultProjectId ?? ""}>
-              <option value="">No project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {lockProject && defaultProjectId ? (
+            <input type="hidden" name="projectId" value={defaultProjectId} />
+          ) : (
+            <label className="note-composer-field">
+              <span>Project</span>
+              <select name="projectId" defaultValue={defaultProjectId ?? ""}>
+                <option value="">No project</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button type="submit" className="btn btp note-composer-submit" disabled={pending}>
             <Send size={15} />
             {pending ? "Saving…" : "Add note"}

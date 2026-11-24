@@ -171,7 +171,7 @@ model PurchaseOrder {
   promisedBy DateTime @db.Date
   cost       Float
   status     Int      @default(0)
-  waybill    String   @default("")
+  waybill    String   @default("")  
   createdAt  DateTime @default(now())
 
   @@index([projectId])

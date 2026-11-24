@@ -64,7 +64,7 @@ export async function saveNote(_: NoteState, formData: FormData): Promise<NoteSt
         data: { ...data, createdById: user.id },
       });
     }
-    revalidatePath("/notes");
+    revalidatePath("/", "layout");
     return { ok: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Something went wrong" };
@@ -75,12 +75,12 @@ export async function togglePin(id: string) {
   const user = await getUser();
   const note = await assertCanModify(id, user);
   await prisma.projectNote.update({ where: { id }, data: { pinned: !note.pinned } });
-  revalidatePath("/notes");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteNote(id: string) {
   const user = await getUser();
   await assertCanModify(id, user);
   await prisma.projectNote.delete({ where: { id } });
-  revalidatePath("/notes");
+  revalidatePath("/", "layout");
 }

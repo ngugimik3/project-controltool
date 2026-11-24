@@ -6,10 +6,11 @@ import { notFound } from "next/navigation";
 import { GanttChart } from "@/components/gantt-chart";
 import { PrintButton } from "@/components/print-button";
 import { TableGantt } from "@/components/table-gantt";
+import { requireProjectAccess } from "@/lib/access";
 import { requireUser } from "@/lib/auth";
 import { STAGES, TASK_STATUS } from "@/lib/constants";
 import { CHECK_KINDS } from "@/lib/defaults";
-import { getSelectedProject } from "@/lib/data";
+import { getProjectById, getSelectedProject } from "@/lib/data";
 import {
   checkLabel,
   derivedTaskStatus,
@@ -540,6 +541,8 @@ async function PrintContent({
   searchParams: Promise<{
     kind?: string | string[];
     format?: string | string[];
+    project?: string | string[];
+    projectId?: string | string[];
   }>;
 }) {
   await requireUser();
@@ -550,8 +553,21 @@ async function PrintContent({
     ? query.format[0]
     : query.format;
   const scheduleFormat = formatRaw === "gantt" ? "gantt" : "table";
-  const project = await getSelectedProject();
+  const projectRaw = query.project ?? query.projectId;
+  const projectParam = Array.isArray(projectRaw) ? projectRaw[0] : projectRaw;
+  if (projectParam) await requireProjectAccess(projectParam);
+  const project = projectParam
+    ? await getProjectById(projectParam)
+    : await getSelectedProject();
   if (!project) notFound();
+
+  const scheduleHref = (format?: "gantt") => {
+    const search = new URLSearchParams();
+    if (projectParam) search.set("project", projectParam);
+    if (format) search.set("format", format);
+    const suffix = search.toString();
+    return `/print/schedule${suffix ? `?${suffix}` : ""}`;
+  };
 
   if (!["checklist", "steps", "schedule", "costing"].includes(report))
     notFound();
@@ -559,24 +575,25 @@ async function PrintContent({
   if (kind && !(CHECK_KINDS as readonly string[]).includes(kind)) notFound();
   if (report === "steps" && kind && !isStepKind(kind)) notFound();
 
+  const base = `/projects/${project.id}`;
   const back =
     report === "schedule"
-      ? "/schedule"
+      ? `${base}/schedule`
       : report === "costing"
-        ? "/costing"
+        ? `${base}/costing`
         : kind === "survey"
-          ? "/survey"
+          ? `${base}/survey`
           : kind === "fat"
-            ? "/fat"
+            ? `${base}/fat`
             : kind === "install"
-              ? "/install"
+              ? `${base}/install`
               : kind === "commis"
-                ? "/commis"
+                ? `${base}/commis`
                 : kind === "sat"
-                  ? "/sat"
+                  ? `${base}/sat`
                   : kind === "training"
-                    ? "/training"
-                    : "/support";
+                    ? `${base}/training`
+                    : `${base}/support`;
 
   return (
     <div
@@ -598,24 +615,32 @@ async function PrintContent({
           <>
             <Link
               className={`btn btg${scheduleFormat === "table" ? " btp" : ""}`}
-              href="/print/schedule"
+              href={scheduleHref()}
             >
               Table-Gantt
             </Link>
             <Link
               className={`btn btg${scheduleFormat === "gantt" ? " btp" : ""}`}
-              href="/print/schedule?format=gantt"
+              href={scheduleHref("gantt")}
             >
               Gantt
             </Link>
-            <a className="btn btg" href="/api/export/schedule" download>
-              Download CSV
+            <a
+              className="btn btg"
+              href={`/api/export/schedule?project=${project.id}`}
+              download
+            >
+              Download Excel
             </a>
           </>
         ) : null}
         {report === "costing" ? (
-          <a className="btn btg" href="/api/export/costing" download>
-            Download CSV
+          <a
+            className="btn btg"
+            href={`/api/export/costing?project=${project.id}`}
+            download
+          >
+            Download Excel
           </a>
         ) : null}
       </div>
@@ -642,6 +667,7 @@ export default function PrintPage({
   searchParams: Promise<{
     kind?: string | string[];
     format?: string | string[];
+    project?: string | string[];
   }>;
 }) {
   return (

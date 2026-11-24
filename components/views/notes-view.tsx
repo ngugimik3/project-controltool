@@ -51,20 +51,29 @@ type SearchParams = Promise<{
 export function NotesView({
   searchParams,
   selectedProjectId,
+  projectId,
+  projectName,
 }: {
   searchParams: SearchParams;
   selectedProjectId?: string | null;
+  projectId?: string;
+  projectName?: string;
 }) {
   return (
     <div className="notes-view view-stack">
       <PageHeader
         title="Notes"
-        subtitle="Engineer notebook and module logs across your projects"
+        subtitle={
+          projectId
+            ? `${projectName ?? "Project"} · engineer notebook and module logs`
+            : "Engineer notebook and module logs across your projects"
+        }
       />
       <Suspense fallback={<Skeleton />}>
         <NotesContent
           searchParams={searchParams}
           selectedProjectId={selectedProjectId}
+          projectId={projectId}
         />
       </Suspense>
     </div>
@@ -74,17 +83,24 @@ export function NotesView({
 async function NotesContent({
   searchParams,
   selectedProjectId,
+  projectId,
 }: {
   searchParams: SearchParams;
   selectedProjectId?: string | null;
+  projectId?: string;
 }) {
   const sp = await searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return <p className="empty">Please sign in.</p>;
 
-  const isAdmin = (session.user as { role?: string }).role === "admin";
-  const projectFilter =
-    sp.project !== undefined ? sp.project : (selectedProjectId ?? "");
+  const role = (session.user as { role?: string }).role;
+  const isAdmin = role === "admin" || role === "superadmin";
+  const projectFilter = projectId
+    ? projectId
+    : sp.project !== undefined
+      ? sp.project
+      : (selectedProjectId ?? "");
+  const basePath = projectId ? `/projects/${projectId}/notes` : "/notes";
   const scope = parseScope(sp.scope);
   const scopeCats = categoriesForScope(scope);
   const categoryOk =
@@ -124,6 +140,7 @@ async function NotesContent({
       take: 200,
     }),
     prisma.project.findMany({
+      where: projectId ? { id: projectId } : undefined,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -153,7 +170,7 @@ async function NotesContent({
     const nextQ = next.q !== undefined ? next.q : (sp.q ?? "");
     if (nextQ) params.set("q", nextQ);
     const qs = params.toString();
-    return qs ? `/notes?${qs}` : "/notes";
+    return qs ? `${basePath}?${qs}` : basePath;
   };
 
   const renderNote = (n: (typeof notes)[number]) => {
@@ -184,6 +201,7 @@ async function NotesContent({
             <NoteDialog
               projects={projects}
               defaultProjectId={projectFilter || undefined}
+              lockProject={Boolean(projectId)}
               note={{
                 id: n.id,
                 title: n.title,
@@ -224,6 +242,7 @@ async function NotesContent({
       <NoteComposer
         projects={projects}
         defaultProjectId={projectFilter || undefined}
+        lockProject={Boolean(projectId)}
       />
 
       <div className="card notes-panel">
@@ -257,23 +276,27 @@ async function NotesContent({
         </div>
 
         <div className="notes-filters">
-          <form action="/notes" className="notes-filters" style={{ flex: 1 }}>
+          <form action={basePath} className="notes-filters" style={{ flex: 1 }}>
             {scope !== "all" ? <input type="hidden" name="scope" value={scope} /> : null}
             <label>
               Search
               <input name="q" defaultValue={sp.q} placeholder="Search notes..." />
             </label>
-            <label>
-              Project
-              <select name="project" defaultValue={projectFilter}>
-                <option value="">All projects</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {projectId ? (
+              <input type="hidden" name="project" value={projectId} />
+            ) : (
+              <label>
+                Project
+                <select name="project" defaultValue={projectFilter}>
+                  <option value="">All projects</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label>
               Category
               <select name="category" defaultValue={categoryFilter ?? ""}>
@@ -298,6 +321,7 @@ async function NotesContent({
             projects={projects}
             defaultProjectId={projectFilter || undefined}
             defaultCategory={scope === "modules" ? "PROCUREMENT" : "SITE"}
+            lockProject={Boolean(projectId)}
           />
         </div>
       </div>

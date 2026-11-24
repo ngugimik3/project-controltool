@@ -23,11 +23,13 @@ export function NoteDialog({
   note,
   defaultProjectId,
   defaultCategory = "GENERAL",
+  lockProject,
 }: {
   projects: { id: string; name: string }[];
   note?: NoteData;
   defaultProjectId?: string;
   defaultCategory?: NoteCategoryValue;
+  lockProject?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -118,17 +120,25 @@ export function NoteDialog({
                 </label>
                 <label>
                   Project
-                  <select
-                    name="projectId"
-                    defaultValue={note?.projectId ?? defaultProjectId ?? ""}
-                  >
-                    <option value="">No project</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  {lockProject && (note?.projectId ?? defaultProjectId) ? (
+                    <input
+                      type="hidden"
+                      name="projectId"
+                      value={note?.projectId ?? defaultProjectId ?? ""}
+                    />
+                  ) : (
+                    <select
+                      name="projectId"
+                      defaultValue={note?.projectId ?? defaultProjectId ?? ""}
+                    >
+                      <option value="">No project</option>
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
               </div>
               <label>

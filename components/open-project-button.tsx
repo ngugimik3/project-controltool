@@ -21,7 +21,7 @@ export function OpenProjectButton({ projectId }: { projectId: string }) {
             toast(result.error);
             return;
           }
-          router.push("/schedule");
+          router.push(`/projects/${projectId}/schedule`);
         })
       }
     >

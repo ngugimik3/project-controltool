@@ -245,59 +245,107 @@ export function ganttWindow(project: ProjectView): GanttWindow {
   return { start, end, unit };
 }
 
+const WEEKDAY_SHORT = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+
+export type GanttDayColumn = {
+  start: number;
+  end: number;
+  iso: string;
+  day: number;
+  weekday: string;
+  monthKey: string;
+  monthLabel: string;
+  x: number;
+  width: number;
+  isToday: boolean;
+  isWeekend: boolean;
+};
+
+export type GanttMonthBand = {
+  key: string;
+  label: string;
+  count: number;
+  x: number;
+  width: number;
+};
+
+/** One column per calendar day in the window — never skips dates. */
+export function ganttDayColumns(
+  window: GanttWindow,
+  today = todayISO(),
+): GanttDayColumn[] {
+  const span = window.end - window.start;
+  if (span <= 0) return [];
+  const columns: GanttDayColumn[] = [];
+  let cursor = window.start;
+  while (cursor < window.end) {
+    const next = cursor + DAY;
+    const date = new Date(cursor);
+    const iso = date.toISOString().slice(0, 10);
+    const dow = date.getUTCDay();
+    const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    columns.push({
+      start: cursor,
+      end: next,
+      iso,
+      day: date.getUTCDate(),
+      weekday: WEEKDAY_SHORT[dow],
+      monthKey,
+      monthLabel: date.toLocaleString("en-GB", {
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+      x: ((cursor - window.start) / span) * 100,
+      width: (DAY / span) * 100,
+      isToday: iso === today,
+      isWeekend: dow === 0 || dow === 6,
+    });
+    cursor = next;
+  }
+  return columns;
+}
+
+/** Month bands that span consecutive day columns (for the axis header). */
+export function ganttMonthBands(days: GanttDayColumn[]): GanttMonthBand[] {
+  if (!days.length) return [];
+  const bands: GanttMonthBand[] = [];
+  for (const day of days) {
+    const last = bands[bands.length - 1];
+    if (last && last.key === day.monthKey) {
+      last.count += 1;
+      last.width += day.width;
+      continue;
+    }
+    bands.push({
+      key: day.monthKey,
+      label: day.monthLabel,
+      count: 1,
+      x: day.x,
+      width: day.width,
+    });
+  }
+  return bands;
+}
+
+/** Tick marks for every day (no skipping). */
 export function ganttTicks(
   window: GanttWindow,
-): { x: number; label: string }[] {
-  const { start, end, unit } = window;
-  const span = end - start;
-  const ticks: { x: number; label: string }[] = [];
-  if (unit === "month") {
-    let cursor = start;
-    ticks.push({
-      x: 0,
-      label: new Date(cursor).toLocaleString("en-GB", {
-        month: "short",
-        year: "2-digit",
-        timeZone: "UTC",
-      }),
-    });
-    const date = new Date(cursor);
-    cursor = Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
-    while (cursor < end) {
-      ticks.push({
-        x: (cursor - start) / span,
-        label: new Date(cursor).toLocaleString("en-GB", {
-          month: "short",
-          year: "2-digit",
-          timeZone: "UTC",
-        }),
-      });
-      const next = new Date(cursor);
-      cursor = Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 1);
-    }
-    return ticks;
-  }
+): { x: number; label: string; iso: string }[] {
+  return ganttDayColumns(window).map((day) => ({
+    x: day.x / 100,
+    label: `${day.day} ${day.weekday}`,
+    iso: day.iso,
+  }));
+}
 
-  const step = unit === "day" ? DAY : 7 * DAY;
-  const count = Math.ceil(span / step);
-  const skip =
-    unit === "day" && count > 45
-      ? Math.ceil(count / 45)
-      : unit === "week" && count > 20
-        ? Math.ceil(count / 20)
-        : 1;
-  for (let index = 0; index < count; index += skip) {
-    const cursor = start + index * step;
-    ticks.push({
-      x: (cursor - start) / span,
-      label: new Date(cursor).toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        timeZone: "UTC",
-      }),
-    });
-  }
-  return ticks;
+/** Whether a task covers a given ISO calendar day. */
+export function dayCovered(
+  dayIso: string,
+  startDate: string,
+  endDate: string,
+): boolean {
+  return dayIso >= startDate && dayIso <= endDate;
 }
 
 export function ganttDates(window: GanttWindow) {
@@ -425,14 +473,21 @@ export function ganttWeekColumns(
     const left = Math.max(cursor, window.start);
     const right = Math.min(next, window.end);
     if (right > left) {
+      const startLabel = new Date(cursor).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+      });
+      const endMs = Math.min(next - DAY, window.end - DAY);
+      const endLabel = new Date(endMs).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+      });
       columns.push({
         start: cursor,
         end: next,
-        label: new Date(cursor).toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          timeZone: "UTC",
-        }),
+        label: startLabel === endLabel ? startLabel : `${startLabel}–${endLabel}`,
         x: ((left - window.start) / span) * 100,
         width: ((right - left) / span) * 100,
       });

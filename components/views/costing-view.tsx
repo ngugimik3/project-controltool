@@ -38,11 +38,20 @@ export function CostingView({ project, role }: { project: ProjectView; role: Rol
         subtitle={`${project.name} · forecast vs budget and margin`}
         actions={
           <>
-            <Link className="btn btg" href="/print/costing" target="_blank" rel="noreferrer">
+            <Link
+              className="btn btg"
+              href={`/print/costing?project=${project.id}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               Print
             </Link>
-            <a className="btn btg" href="/api/export/costing" download>
-              Export CSV
+            <a
+              className="btn btg"
+              href={`/api/export/costing?project=${project.id}`}
+              download
+            >
+              Export Excel
             </a>
           </>
         }

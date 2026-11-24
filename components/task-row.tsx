@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import {
   deleteTaskAction,
   nextTaskStatusAction,
-  saveTaskAction,
 } from "@/lib/actions/task";
 import { taskStatusLabel, todayISO } from "@/lib/planner";
 import type { TaskView } from "@/lib/types";
+import { useTaskSave } from "@/components/use-task-save";
 import { ActionButton, ConfirmButton } from "./forms";
-import { toast } from "./toast";
 
 interface Dependency {
   id: string;
@@ -28,40 +26,11 @@ export function TaskRow({
   dependencies: Dependency[];
   canDelete: boolean;
 }) {
-  const [saved, setSaved] = useState({
-    name: task.name,
-    role: task.role,
-    owner: task.owner,
-    start: task.startDate,
-    end: task.endDate,
-    dependsOnId: task.dependsOnId ?? "0",
-  });
-  const [values, setValues] = useState(saved);
-  const [, startTransition] = useTransition();
+  const { values, setValues, save } = useTaskSave(projectId, task);
 
-  function save(next: typeof values) {
-    setValues(next);
-    const formData = new FormData();
-    formData.set("projectId", projectId);
-    formData.set("taskId", task.id);
-    formData.set("name", next.name);
-    formData.set("role", next.role);
-    formData.set("owner", next.owner);
-    formData.set("start", next.start);
-    formData.set("end", next.end);
-    formData.set("dependsOnId", next.dependsOnId);
-    startTransition(async () => {
-      const result = await saveTaskAction(formData);
-      if (result.error) {
-        toast(result.error);
-        setValues(saved);
-      } else {
-        setSaved(next);
-      }
-    });
-  }
-
-  const dependency = dependencies.find((item) => item.id === values.dependsOnId);
+  const dependency = dependencies.find(
+    (item) => item.id === values.dependsOnId,
+  );
 
   return (
     <tr>
@@ -69,14 +38,18 @@ export function TaskRow({
         <input
           aria-label="Task"
           value={values.name}
-          onChange={(event) => setValues({ ...values, name: event.target.value })}
+          onChange={(event) =>
+            setValues({ ...values, name: event.target.value })
+          }
           onBlur={(event) => save({ ...values, name: event.target.value })}
         />
         <select
           aria-label="Depends on"
           value={values.dependsOnId}
           style={{ marginTop: 4 }}
-          onChange={(event) => save({ ...values, dependsOnId: event.target.value })}
+          onChange={(event) =>
+            save({ ...values, dependsOnId: event.target.value })
+          }
         >
           <option value="0">Runs in parallel (no dependency)</option>
           {dependencies.map((item) => (
@@ -97,7 +70,9 @@ export function TaskRow({
           aria-label="Role"
           list="task-roles"
           value={values.role}
-          onChange={(event) => setValues({ ...values, role: event.target.value })}
+          onChange={(event) =>
+            setValues({ ...values, role: event.target.value })
+          }
           onBlur={(event) => save({ ...values, role: event.target.value })}
         />
       </td>
@@ -106,7 +81,9 @@ export function TaskRow({
           aria-label="Owner"
           value={values.owner}
           placeholder="Assign person"
-          onChange={(event) => setValues({ ...values, owner: event.target.value })}
+          onChange={(event) =>
+            setValues({ ...values, owner: event.target.value })
+          }
           onBlur={(event) => save({ ...values, owner: event.target.value })}
         />
       </td>
@@ -146,4 +123,3 @@ export function TaskRow({
     </tr>
   );
 }
-

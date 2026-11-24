@@ -1,13 +1,9 @@
 import Link from "next/link";
-import { ActionButton, AutoForm, SubmitForm } from "@/components/forms";
+import { SubmitForm } from "@/components/forms";
 import { PageHeader } from "@/components/page-header";
 import { ScheduleTimeline } from "@/components/schedule-timeline";
 import { TaskRow } from "@/components/task-row";
-import {
-  addTaskAction,
-  addTaskRoleAction,
-  saveGanttAction,
-} from "@/lib/actions/task";
+import { addTaskAction, addTaskRoleAction } from "@/lib/actions/task";
 import { WBS } from "@/lib/defaults";
 import {
   canDependOn,
@@ -49,8 +45,6 @@ export function ScheduleView({
     .filter(Boolean)
     .sort();
 
-  const gantt = (project.extra.gantt ?? {}) as { from?: string; to?: string; unit?: string };
-
   return (
     <div className="view-stack">
       <PageHeader
@@ -60,14 +54,18 @@ export function ScheduleView({
           <>
             <Link
               className="btn btg no-print"
-              href="/print/schedule"
+              href={`/print/schedule?project=${project.id}`}
               target="_blank"
               rel="noreferrer"
             >
               Print layout
             </Link>
-            <a className="btn btg no-print" href="/api/export/schedule" download>
-              Export CSV
+            <a
+              className="btn btg no-print"
+              href={`/api/export/schedule?project=${project.id}`}
+              download
+            >
+              Export Excel
             </a>
           </>
         }
@@ -102,96 +100,16 @@ export function ScheduleView({
         </div>
       </div>
 
-      <div className="card">
-        <div className="ct">Gantt period</div>
-        <AutoForm action={saveGanttAction} className="f">
-          <input type="hidden" name="projectId" value={project.id} />
-          <label>
-            <span className="kl">From (blank fits the tasks)</span>
-            <input type="date" name="from" defaultValue={gantt.from ?? ""} />
-          </label>
-          <label>
-            <span className="kl">To</span>
-            <input type="date" name="to" defaultValue={gantt.to ?? ""} />
-          </label>
-          <label>
-            <span className="kl">Scale</span>
-            <select name="unit" defaultValue={window.unit}>
-              <option value="day">Days</option>
-              <option value="week">Weeks</option>
-              <option value="month">Months</option>
-            </select>
-          </label>
-        </AutoForm>
-        <div style={{ marginTop: ".6rem" }}>
-          <ActionButton
-            action={saveGanttAction}
-            fields={{ projectId: project.id, from: "", to: "", unit: window.unit }}
-            label="Fit to tasks"
-            className="btn btg"
-          />
-        </div>
-      </div>
-
       <div className="card gantt-card">
         <div className="ct no-print">Timeline</div>
+        <p className="sub no-print gantt-card-sub">
+          Chart and table share the same dates. Expand a Gantt row or edit Table-Gantt
+          cells to update details without leaving the chart.
+        </p>
         <ScheduleTimeline project={project} tasks={tasks} ganttWindow={window} />
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div className="card-inset-head">
-          <div className="ct" style={{ marginBottom: 0 }}>
-            Tasks
-          </div>
-          <p className="sub" style={{ margin: 0 }}>
-            Edit details inline. The chart above updates after save.
-          </p>
-        </div>
-        <div className="sc">
-          <table className="tbl" style={{ border: 0, borderRadius: 0 }}>
-            <thead>
-              <tr>
-                <th>Task and dependency</th>
-                <th>Role</th>
-                <th>Owner</th>
-                <th>Dates</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.length ? (
-                tasks.map((task) => {
-                  const dependencies = project.tasks
-                    .filter((candidate) => canDependOn(project.tasks, task.id, candidate.id))
-                    .map((candidate) => ({
-                      id: candidate.id,
-                      name: candidate.name,
-                      status: candidate.status,
-                    }));
-                  return (
-                    <TaskRow
-                      key={task.id}
-                      projectId={project.id}
-                      task={task}
-                      dependencies={dependencies}
-                      canDelete={canDelete}
-                    />
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={6} className="empty">
-                    No tasks yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="card">
+      <div className="card schedule-add-card">
         <div className="ct">Add task</div>
         <SubmitForm
           action={addTaskAction}
@@ -224,6 +142,61 @@ export function ScheduleView({
             </select>
           </label>
         </SubmitForm>
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card-inset-head">
+          <div className="ct" style={{ marginBottom: 0 }}>
+            Task details
+          </div>
+          <p className="sub" style={{ margin: 0 }}>
+            Full list with dependencies and status. Chart updates after save.
+          </p>
+        </div>
+        <div className="sc">
+          <table className="tbl" style={{ border: 0, borderRadius: 0 }}>
+            <thead>
+              <tr>
+                <th>Task and dependency</th>
+                <th>Role</th>
+                <th>Owner</th>
+                <th>Dates</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.length ? (
+                tasks.map((task) => {
+                  const dependencies = project.tasks
+                    .filter((candidate) =>
+                      canDependOn(project.tasks, task.id, candidate.id),
+                    )
+                    .map((candidate) => ({
+                      id: candidate.id,
+                      name: candidate.name,
+                      status: candidate.status,
+                    }));
+                  return (
+                    <TaskRow
+                      key={task.id}
+                      projectId={project.id}
+                      task={task}
+                      dependencies={dependencies}
+                      canDelete={canDelete}
+                    />
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="empty">
+                    No tasks yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card">

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
 import { DEFAULT_PROJECT_TYPES } from "./constants";
 import type {
@@ -80,30 +81,29 @@ function mapAttachment(attachment: {
   };
 }
 
-export const getProjects = cache(async (): Promise<ProjectView[]> => {
-  const projects = await prisma.project.findMany({
-    orderBy: { createdAt: "asc" },
+const projectInclude = {
+  tasks: { orderBy: [{ sortOrder: "asc" }, { startDate: "asc" }] },
+  purchaseOrders: { orderBy: { createdAt: "asc" } },
+  checkItems: {
+    orderBy: { sortOrder: "asc" },
     include: {
-      tasks: { orderBy: [{ sortOrder: "asc" }, { startDate: "asc" }] },
-      purchaseOrders: { orderBy: { createdAt: "asc" } },
-      checkItems: {
-        orderBy: { sortOrder: "asc" },
-        include: {
-          reviews: { orderBy: { version: "asc" } },
-          attachments: { select: attachmentSelect },
-        },
-      },
-      stageReviews: { orderBy: [{ key: "asc" }, { version: "asc" }] },
-      docs: { orderBy: { sortOrder: "asc" } },
-      costLines: { orderBy: { id: "asc" } },
-      params: { orderBy: { id: "asc" } },
-      visits: { orderBy: { date: "asc" } },
+      reviews: { orderBy: { version: "asc" } },
       attachments: { select: attachmentSelect },
-      notes: true,
     },
-  });
+  },
+  stageReviews: { orderBy: [{ key: "asc" }, { version: "asc" }] },
+  docs: { orderBy: { sortOrder: "asc" } },
+  costLines: { orderBy: { id: "asc" } },
+  params: { orderBy: { id: "asc" } },
+  visits: { orderBy: { date: "asc" } },
+  attachments: { select: attachmentSelect },
+  notes: true,
+} satisfies Prisma.ProjectInclude;
 
-  return projects.map((project) => ({
+type ProjectRow = Prisma.ProjectGetPayload<{ include: typeof projectInclude }>;
+
+function mapProject(project: ProjectRow): ProjectView {
+  return {
     id: project.id,
     name: project.name,
     client: project.client,
@@ -188,8 +188,27 @@ export const getProjects = cache(async (): Promise<ProjectView[]> => {
     })),
     attachments: project.attachments.map(mapAttachment),
     notes: project.notes.map((note) => ({ key: note.key, text: note.text })),
-  }));
+  };
+}
+
+export const getProjects = cache(async (): Promise<ProjectView[]> => {
+  const projects = await prisma.project.findMany({
+    orderBy: { createdAt: "asc" },
+    include: projectInclude,
+  });
+  return projects.map(mapProject);
 });
+
+export const getProjectById = cache(
+  async (projectId: string): Promise<ProjectView | null> => {
+    if (!projectId) return null;
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: projectInclude,
+    });
+    return project ? mapProject(project) : null;
+  },
+);
 
 export async function getProjectOptions(): Promise<ProjectOption[]> {
   const projects = await getProjects();
@@ -210,8 +229,7 @@ export const getSelectedProject = cache(async (): Promise<ProjectView | null> =>
 });
 
 export async function getProject(projectId: string): Promise<ProjectView | null> {
-  const projects = await getProjects();
-  return projects.find((p) => p.id === projectId) ?? null;
+  return getProjectById(projectId);
 }
 
 export const getSettings = cache(async (): Promise<SettingsView> => {

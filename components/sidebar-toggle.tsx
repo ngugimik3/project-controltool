@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { cn } from "@/lib/ui";
 
 const COOKIE = "sidebar";
 
@@ -25,44 +27,22 @@ export function SidebarToggle({ defaultOpen }: { defaultOpen: boolean }) {
   return (
     <button
       type="button"
-      className="sidebar-toggle"
       onClick={toggle}
       aria-controls="sidebar"
       aria-expanded={open}
       aria-label={label}
       title={label}
+      className={cn(
+        "group flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-all",
+        "hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900",
+        "active:scale-95",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
+      )}
     >
       {open ? (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M3 4v16" />
-          <path d="m15 7-5 5 5 5" />
-        </svg>
+        <PanelLeftClose className="size-4 transition-transform group-hover:scale-110" />
       ) : (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4 6h16" />
-          <path d="M4 12h16" />
-          <path d="M4 18h16" />
-        </svg>
+        <PanelLeftOpen className="size-4 transition-transform group-hover:scale-110" />
       )}
     </button>
   );
