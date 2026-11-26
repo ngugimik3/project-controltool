@@ -102,7 +102,7 @@ export function AppSidebar({
                 </SidebarMenuItem>
               </SidebarMenu>
               <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                <div className="text-[10px] font-semibold tracking-[0.08em] text-white/55 uppercase">
+                <div className="text-[10px] font-semibold tracking-[0.08em] text-white/70 uppercase">
                   Current project
                 </div>
                 <div className="mt-0.5 truncate text-sm font-semibold text-white">

@@ -2,10 +2,7 @@
 
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { TASK_STATUS } from "@/lib/constants";
-import {
-  GanttDateAxis,
-  ganttAxisWidth,
-} from "@/components/gantt-date-axis";
+import { GanttDateAxis, ganttAxisWidth } from "@/components/gantt-date-axis";
 import {
   derivedTaskStatus,
   ganttBar,
@@ -55,7 +52,9 @@ export function GanttChart({
 
   return (
     <div className={rootClass}>
-      <div className={`gantt-toolbar${variant === "screen" ? " no-print" : ""}`}>
+      <div
+        className={`gantt-toolbar${variant === "screen" ? " no-print" : ""}`}
+      >
         <div className="gantt-period">
           <span className="gantt-period-label">
             {variant === "print" ? "Date range" : "Timeline"}
@@ -72,8 +71,8 @@ export function GanttChart({
 
       {variant === "print" ? (
         <p className="gantt-print-meta">
-          Each column is one calendar day. Bars show task span and status.
-          Range {dates.from} → {dates.to} ({days.length} days).
+          Each column is one calendar day. Bars show task span and status. Range{" "}
+          {dates.from} → {dates.to} ({days.length} days).
         </p>
       ) : null}
 
@@ -197,7 +196,10 @@ function GanttRow({
         )}
       </td>
       <td className="gantt-track-cell">
-        <div className="gantt-track" style={{ width: axisWidth, minWidth: axisWidth }}>
+        <div
+          className="gantt-track"
+          style={{ width: axisWidth, minWidth: axisWidth }}
+        >
           {days.map((day) => (
             <div
               key={`grid-${task.id}-${day.iso}`}
@@ -212,10 +214,7 @@ function GanttRow({
             />
           ))}
           {todayX != null ? (
-            <div
-              className="gantt-today"
-              style={{ left: `${todayX * 100}%` }}
-            />
+            <div className="gantt-today" style={{ left: `${todayX * 100}%` }} />
           ) : null}
           {bar.width > 0 ? (
             <div
@@ -291,7 +290,9 @@ function EditableGanttRow({
       todayX={todayX}
       dependencyName={dependencyName}
       label={
-        <div className={`gantt-edit${open ? " is-open" : ""}${pending ? " is-pending" : ""}`}>
+        <div
+          className={`gantt-edit${open ? " is-open" : ""}${pending ? " is-pending" : ""}`}
+        >
           <button
             type="button"
             className="gantt-edit-toggle"
@@ -301,7 +302,9 @@ function EditableGanttRow({
             <span className={`gantt-sym ${statusClass}`} aria-hidden>
               {statusSymbol(status)}
             </span>
-            <span className="gantt-label-name">{values.name || "Untitled task"}</span>
+            <span className="gantt-label-name">
+              {values.name || "Untitled task"}
+            </span>
             <span className="gantt-edit-chevron" aria-hidden>
               {open ? "▾" : "▸"}
             </span>
@@ -387,7 +390,10 @@ function GanttLegend({ today }: { today: boolean }) {
   return (
     <div className="gantt-legend" aria-label="Status legend">
       {TASK_STATUS.map((label, index) => (
-        <span key={label} className={`gantt-legend-item ${STATUS_CLASS[index]}`}>
+        <span
+          key={label}
+          className={`gantt-legend-item ${STATUS_CLASS[index]}`}
+        >
           <i />
           <span className="gantt-sym" aria-hidden>
             {statusSymbol(index)}

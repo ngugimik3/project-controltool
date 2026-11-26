@@ -422,7 +422,7 @@ label.fl {
 .app-main {
   flex: 1 1 auto;
   width: 100%;
-  max-width: 1280px;
+  max-width: 80rem;
   margin: 0 auto;
   padding: 12px 24px 48px;
 }
@@ -446,12 +446,13 @@ label.fl {
   font-weight: 650;
   letter-spacing: -0.4px;
   line-height: 1.2;
+  color: #ffffff;
 }
 
 .page-header-sub {
   margin-top: 4px;
   font-size: 13.5px;
-  color: var(--tm);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .page-header-actions {
@@ -510,11 +511,10 @@ label.fl {
 .gate {
   margin-bottom: 16px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.78);
+  background: #ffffff;
   border: 1px solid var(--bd);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(8px);
 }
 
 .gate-head {
@@ -881,7 +881,7 @@ label.fl {
 }
 
 .schedule-stat {
-  background: rgba(255, 255, 255, 0.88);
+  background: #ffffff;
   border: 1px solid var(--bd);
   border-radius: 12px;
   padding: 12px 14px;
@@ -926,6 +926,9 @@ label.fl {
 
 .gantt-card {
   padding-bottom: 12px;
+  background: #ffffff;
+  border-radius: 12px;
+  backdrop-filter: none;
 }
 
 .gantt-card-sub {
@@ -1071,8 +1074,9 @@ label.fl {
   box-sizing: border-box;
   border-bottom: 1px solid var(--bd);
   border-right: 1px solid rgba(15, 31, 42, 0.12);
-  padding: 3px 4px;
+  padding: 4px 6px;
   font-size: 10.5px;
+  line-height: 1.2;
   font-weight: 650;
   color: #0b3a5c;
   white-space: nowrap;
@@ -1087,11 +1091,11 @@ label.fl {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-height: 30px;
+  gap: 2px;
+  min-height: 34px;
   border-right: 1px solid rgba(15, 31, 42, 0.08);
-  padding: 2px 0;
-  line-height: 1.05;
+  padding: 4px 0 3px;
+  line-height: 1.1;
 }
 
 .gantt-day-cell.is-weekend {
@@ -1104,17 +1108,19 @@ label.fl {
 }
 
 .gantt-day-num {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
+  line-height: 1.1;
   color: var(--tp);
 }
 
 .gantt-day-wd {
   font-size: 8px;
   font-weight: 600;
+  line-height: 1;
   color: var(--tm);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .format-toggle {
@@ -1200,8 +1206,8 @@ label.fl {
   --bar-blue-border: #0069ad;
   --bar-grey: #94a3b8;
   --bar-grey-border: #64748b;
-  --bar-red: #dc2626;
-  --bar-red-border: #991b1b;
+  --bar-red: #fee2e2;
+  --bar-red-border: #dc2626;
   --bar-green: #16a34a;
   --bar-green-border: #166534;
   display: flex;
@@ -1540,12 +1546,35 @@ label.fl {
   color: var(--tp);
 }
 
-.tg-task { width: 18%; }
-.tg-owner { width: 10%; }
-.tg-date { width: 8%; white-space: nowrap; }
-.tg-num { width: 5%; text-align: right; }
-.tg-status { width: 11%; }
-.tg-weeks { width: 40%; padding: 0 !important; }
+.table-gantt-table .tg-task {
+  width: 220px;
+  min-width: 220px;
+}
+
+.table-gantt-table .tg-owner {
+  width: 130px;
+  min-width: 130px;
+}
+
+.table-gantt-table .tg-date {
+  width: 130px;
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.table-gantt-table .tg-num {
+  width: 52px;
+  text-align: right;
+}
+
+.table-gantt-table .tg-status {
+  width: 104px;
+}
+
+.table-gantt-table .tg-weeks {
+  width: auto;
+  padding: 0 !important;
+}
 
 .tg-week-cell,
 .tg-day-slot {

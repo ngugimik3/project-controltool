@@ -2,15 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireProjectAccess } from "@/lib/access";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { logActivity } from "@/lib/activity";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/data";
 import { saveSetting } from "@/lib/settings";
-import { canDependOn, taskStatusLabel } from "@/lib/planner";
+import { canDependOn, sortedTasks, taskStatusLabel } from "@/lib/planner";
 import { parseForm, zDate, zShortText } from "@/lib/validation";
-import type { ActionResult } from "@/lib/types";
+import type { ActionResult, TaskView } from "@/lib/types";
 
 function depId(value: string): string | null {
   return value && value !== "0" ? value : null;
@@ -38,6 +39,33 @@ async function loadProject(projectId: string) {
       },
     },
   });
+}
+
+export async function getProjectTasksAction(
+  projectId: string,
+): Promise<TaskView[]> {
+  await requireProjectAccess(projectId);
+  const tasks = await prisma.task.findMany({
+    where: { projectId },
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      owner: true,
+      startDate: true,
+      endDate: true,
+      status: true,
+      sortOrder: true,
+      dependsOnId: true,
+    },
+  });
+  return sortedTasks(
+    tasks.map((task) => ({
+      ...task,
+      startDate: task.startDate.toISOString().slice(0, 10),
+      endDate: task.endDate.toISOString().slice(0, 10),
+    })),
+  );
 }
 
 export async function saveTaskAction(formData: FormData): Promise<ActionResult> {

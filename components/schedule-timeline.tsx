@@ -5,6 +5,7 @@ import { ActionButton, AutoForm } from "@/components/forms";
 import { GanttChart } from "@/components/gantt-chart";
 import { TableGantt } from "@/components/table-gantt";
 import { saveGanttAction } from "@/lib/actions/task";
+import { useProjectTasks } from "@/components/use-project-tasks";
 import type { GanttWindow } from "@/lib/planner";
 import type { ProjectView, TaskView } from "@/lib/types";
 
@@ -23,6 +24,8 @@ export function ScheduleTimeline({
 }) {
   const [format, setFormat] = useState<TimelineFormat>(initialFormat);
   const [showPeriod, setShowPeriod] = useState(false);
+  const { data: liveTasks } = useProjectTasks(project.id, tasks);
+  const timelineTasks = liveTasks ?? tasks;
   const gantt = (project.extra.gantt ?? {}) as {
     from?: string;
     to?: string;
@@ -110,7 +113,7 @@ export function ScheduleTimeline({
         data-format="gantt"
       >
         <GanttChart
-          tasks={tasks}
+          tasks={timelineTasks}
           window={win}
           groupByStage
           projectId={project.id}
@@ -122,7 +125,7 @@ export function ScheduleTimeline({
         data-format="table"
       >
         <TableGantt
-          tasks={tasks}
+          tasks={timelineTasks}
           window={win}
           defaultExpanded
           projectId={project.id}

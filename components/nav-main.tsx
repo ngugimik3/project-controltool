@@ -26,7 +26,7 @@ export function NavMain({
       {groups.map((group) => (
         <SidebarGroup key={group.label} className="py-1.5">
           {group.label !== "Main" ? (
-            <SidebarGroupLabel className="mb-1 h-7 px-2.5 text-[10.5px] font-semibold tracking-[0.08em] text-white/50 uppercase">
+            <SidebarGroupLabel className="mb-1 h-7 px-3 text-[10.5px] font-semibold tracking-[0.08em] text-white/70 uppercase">
               {group.label}
             </SidebarGroupLabel>
           ) : null}
@@ -40,6 +40,7 @@ export function NavMain({
                       asChild
                       isActive={isNavItemActive(item, pathname, projectId)}
                       tooltip={item.label}
+                      className="px-3"
                     >
                       <Link href={navHref(item, projectId)}>
                         <Icon />

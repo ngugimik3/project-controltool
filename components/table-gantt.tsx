@@ -101,7 +101,7 @@ export function TableGantt({
       ) : null}
 
       <div className="table-gantt-scroll">
-        <table className="table-gantt-table" style={{ minWidth: axisWidth + 520 }}>
+        <table className="table-gantt-table" style={{ minWidth: axisWidth + 840 }}>
           <thead>
             <tr>
               <th className="tg-task">Task</th>
